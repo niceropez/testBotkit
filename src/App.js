@@ -1,16 +1,24 @@
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
 
 function App() {
+
+  const [messengerInput, setMessengerInput] = useState('');
   const [reconnectCount, setReconnectCount] = useState(0);
   const [guid, setGuid] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
-  const [replies, setReplies] = useState<String>([]);
-  const [messages, setMessages] = useState<String>([]);
+  const [replies, setReplies] = useState();
+  const [messages, setMessages] = useState([]);
   const [socket, setSocket] = useState(null);
 
+  // * variables temporales*
+  const [isTyping, setIsTyping] = useState(false)
+  const [offline, setOffline] = useState(false);
+  const [disconnected, setDisconnected] = useState(false);
+  // **
+
   const config = {
-    ws_url : (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host,
+    ws_url : (window.location.protocol === 'https:' ? 'wss' : 'ws') + '://' + window.location.host,
     reconnect_timeout: 3000,
     max_reconnect: 5,
     enable_history: false
@@ -202,7 +210,7 @@ function App() {
           connectWebsocket(config.ws_url);
         }, config.reconnect_timeout);
       } else {
-        message_window.className = 'offline';
+        //message_window.className = 'offline';
       }
     });
 
@@ -320,18 +328,105 @@ function App() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 
+  const testSend = (e) => {
+    e.preventDefault();
+    console.log({texto: messengerInput, tipo: 'user'});
+
+    let auxMessage = messages;
+    auxMessage.push({texto: messengerInput, tipo: 'user'});
+    setMessages(auxMessage);
+    setMessengerInput('');
+
+  }
+
+  const handleInput = (e) => {
+    setIsTyping(true);
+    setMessengerInput(e.target.value);
+    setTimeout(() => {
+      setIsTyping(false);
+    }, 2000);
+  }
+
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <p> BotKit </p>
-      </header>
+    <div className="wrapper">
+      <br/>
       <div className='message_window'>
-        
+        <div>
+         <div className='powered_by'> BotKit </div>
+
+         {disconnected && (
+          <div class="disconnected">
+            Disconnected... reconnecting!
+          </div>
+         )}
+         {offline && (
+            <div class="offline">
+              Offline! Reload to reconnect.
+          </div>
+         )}
+
+         <section>
+          <div id="message_list">
+            <div id="message_template">
+                <div class="message">
+                  {isTyping && (
+                      <div class="typing-indicator">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                  )}
+
+                  <br /> 
+                     
+                {/*
+                {{#if message.open_link}}
+                  <a href="{{{message.open_link}}}" target="_blank" class="button_message">{{#if message.link_title}}{{message.link_title}}{{else}}{{message.open_link}}{{/if}}</a>
+                {{/if}} */}
+
+                </div>
+                {/* {{#message.files}}
+                  <div class="file_attachment">
+                  {{#if image}}
+                    <img src="{{{url}}}" alt="{{{url}}}" />
+                  {{else}}
+                    <a href="{{{url}}}" title="{{{url}}}">{{{url}}}</a>
+                  {{/if}}
+                  </div>
+                {{/message.files}} */}
+            </div>
+          </div>
+         </section>
+
+      </div>
+
+      <div className="container">
+        <div className="CuadroMensajes">
+          {messages.map((m, index) => (
+            <div className="bubble" key={index}>
+              <span className="text" >{m.texto}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <br />
+
+      <div className='message_window'>
+        <form onSubmit={testSend}>
+          <input 
+            type="text" 
+            value={messengerInput}
+            placeholder="Type here..."
+            onChange={handleInput} />
+          <button type="submit" style={{marginLeft:"4px"}}>Send</button>
+        </form>
       </div>
       <footer>
 
       </footer>
+      </div>
     </div>
   );
 }
